@@ -1,0 +1,4 @@
+uttarakhand_static_stack.tif filter=lfs diff=lfs merge=lfs -text
+data/fire_data/fire_nrt_SV-C2_630938.cgf filter=lfs diff=lfs merge=lfs -text
+data/fire_data/fire_nrt_SV-C2_630938.dbf filter=lfs diff=lfs merge=lfs -text
+data/fire_data/fire_archive_SV-C2_630938.dbf filter=lfs diff=lfs merge=lfs -text
