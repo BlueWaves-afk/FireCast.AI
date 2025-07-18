@@ -40,46 +40,43 @@ def display_multiband_raster(raster_path, band_indices=None, titles=None, cmap='
         plt.show()
 
 def convert_nc_to_multiband_tif(nc_path, output_dir):
-
-    ds = xr.open_dataset(nc_path, engine="netcdf4")
-
-    # Use 'valid_time' instead of 'time'
-    if 'valid_time' not in ds:
-        raise ValueError("❌ No valid_time dimension in dataset.")
-
-    # Select the first valid_time (you can adjust this logic)
-    selected_time = ds['valid_time'].values[0]
-    print(f"🕛 Selected timestamp: {selected_time}")
-
     bands = []
     band_names = []
+    transform = None
+    height, width = None, None
+    selected_time = None
 
-    for var in ds.data_vars:
-        da = ds[var]
+    with xr.open_dataset(nc_path, engine="netcdf4") as ds:
+        # Check for valid_time
+        if 'valid_time' not in ds:
+            raise ValueError("❌ No valid_time dimension in dataset.")
 
-        # Skip coords and non-spatial vars
-        if {'longitude', 'latitude'}.issubset(da.dims):
-            # Select data at valid_time
-            da = da.sel(valid_time=selected_time)
-            da = da.squeeze()
+        # Select the first valid_time
+        selected_time = ds['valid_time'].values[0]
+        print(f"🕛 Selected timestamp: {selected_time}")
 
-            # Set spatial dims and CRS
-            da.rio.set_spatial_dims(x_dim="longitude", y_dim="latitude", inplace=True)
-            da.rio.write_crs("EPSG:4326", inplace=True)
+        for var in ds.data_vars:
+            da = ds[var]
 
-            bands.append(da.values.astype(np.float32))
-            band_names.append(var)
+            if {'longitude', 'latitude'}.issubset(da.dims):
+                da = da.sel(valid_time=selected_time).squeeze()
+                da = da.rio.set_spatial_dims(x_dim="longitude", y_dim="latitude")
+                da = da.rio.write_crs("EPSG:4326")
+
+                # Load into memory before ds closes
+                bands.append(da.values.astype(np.float32))
+                band_names.append(var)
+
+                # Store transform/shape from first valid var
+                if transform is None:
+                    transform = da.rio.transform()
+                    height, width = da.shape
 
     if not bands:
         raise ValueError("❌ No valid variables with lat/lon dimensions found.")
 
-    # Stack into one 3D array: (bands, height, width)
+    # Stack into (bands, height, width)
     stacked = np.stack(bands, axis=0)
-
-    # Use first DA for metadata
-    template = ds[band_names[0]].sel(valid_time=selected_time).squeeze()
-    transform = template.rio.transform()
-    height, width = template.shape
 
     out_meta = {
         "driver": "GTiff",
@@ -91,18 +88,19 @@ def convert_nc_to_multiband_tif(nc_path, output_dir):
         "transform": transform
     }
 
-    # Output path
+    os.makedirs(output_dir, exist_ok=True)
     out_filename = f"weather_{str(selected_time)[:10]}.tif"
     out_path = os.path.join(output_dir, out_filename)
 
-    os.makedirs(output_dir, exist_ok=True)
-
     with rasterio.open(out_path, "w", **out_meta) as dst:
         dst.write(stacked)
-    
+
+    # ✅ Safe to delete now
     os.remove(nc_path)
+
     print(f"✅ Saved multiband weather raster: {out_path}")
     return out_path
+
 
 def preprocess_and_normalize_multiband_raster(
     input_tif_path,

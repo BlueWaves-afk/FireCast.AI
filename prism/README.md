@@ -1,75 +1,87 @@
-PRISM
-Prediction of Risk using Integrated Spatial Maps
+🔥 PRISM — Prediction of Risk using Integrated Spatial Maps
 
-Is a spatial model that generates a probability map for fire risk regions using U-NET archiecture
+PRISM is a geospatial deep learning system that predicts forest fire risk using the U-Net++ architecture. It generates multiclass probability maps to classify fire-prone regions from multi-source raster datasets including terrain, weather, and vegetation indicators.
 
+🚀 Overview PRISM employs U-Net++, a powerful CNN-based segmentation model, enhanced with nested skip connections to enable rich spatial learning — especially important when dealing with complex, high-resolution geospatial data.
 
-# Model Choice
-The choice of model is a very pertinent matter, there are several existing architectures like U-Net, U-Net++, and other transformer based ones. In short our model must be able to have:
-1) Generalization across diverse terrain and vegetation
-2) High pixel-level accuracy for fire probability classification
-3) Practical training feasibility (compute + time)
+The system is built to operate on multi-channel raster inputs, and outputs pixel-level fire risk classification across a region, making it ideal for early warning systems, planning, and mitigation.
 
-For this purpose we have settled on U-NET++ architecture after extensive research, as other transformer based models, although would capture longer context, would take much processing time and gpu power.
- ------------------
+📦 Input Data Multi-channel raster stacks are prepared from:
 
- # Datasets Used
-OUR DATA PIPELINE FOLLOWS:
--Clipping to state boundary
--reproject to common coordinate epsg32644
--cleaning the data for missing values
--and processing and labelling the data for ML use case
+Land Use / Land Cover (LULC)
 
-OUR COMMON RASTER DATA WOULD INCLUDE: 1)SLOPE & ASPECT 2)GHS_built_s 3) temperature 4)wind velocity 5)LULC, BUT for the purpose of generating a fire ignition model, we can avoid slope & aspect, and wind velocity as they are more usefull in predicting where the fire will spread after ignition.
+Elevation & Slope
 
-We consider weather bands as dynamic, changing day to day, and keep the other bands as relatively static(update every year), hence we need to create a folder structure for seperate weather data for seperate days, across the year. We match this with VIIRS data for the next day(forecast)
-We match weather and VIIRS data at 12 UTC
+Population Data
 
-a) Weather Data: Wind speed/direction, temperature, rainfall, humidity (from MOSDAC, ERA-5, IMD)
+Meteorological data:
 
-We have 3 datasets to obtain our data from, out of this we have determined that ERA5(ECMWF Copernicus), is the most complete for ML modeling. For this purpose we use the cdsapi python client(Copernicus Climate Data Store (CDS)).
+Temperature
 
-b) Terrain Parameters: Slope and aspect (from 30m DEM available on Bhoonidhi portal)
-We obtained the data in 14 tiles, covering the region of Uttarakhand, The titles are in 30m resolution(standard).
+Wind speed/direction
 
-c) Thematic Data: Fuel Availability using LULC datasets
+Relative humidity
 
-Land Use/Land Cover (LULC)
+Each raster tile is stacked as input channels, normalized, and aligned to a common projection and resolution.
 
-we have options such as Sentinel or Bhuvan or ESA worldwide, we opt to use a Hybrid approach, ESA WorldCover as your base raster (for uniform 10m resolution), and overlay/correct using Bhuvan LULC classes in critical fire zones (e.g., scrub, plantation, mixed forest).
+🧠 Model Architecture Base model: U-Net++
 
-This Hybrid dataset would allow us to have ML ready inputs from ESA worldwide, as well as the comprehensive fuel detail from Bhuvan; also allowing for region specifc modeling.
- 
-Our Hybrid approach follows a pipeline:
+Input: Multi-channel geospatial raster stack (e.g., 256×256×M)
 
-🧠 Overview of the Integration 2Pipeline:
-🔹 Step 1: Download Datasets
-✅ ESA WorldCover as GeoTIFF: direct download
+Output: Segmentation map of shape (256×256) with integer class labels:
 
-✅ Bhuvan LULC as Shapefile or raster (manual from https://bhuvan.nrsc.gov.in)
+0: No Risk
 
-🔹 Step 2: Reproject and Rasterize Bhuvan to Match ESA
-Align coordinate system, resolution, and extent
+1: Low Risk
 
-🔹 Step 3: Map Bhuvan Classes to Fuel Scores
-Assign numeric fuel weights to each Bhuvan class
+2: Medium Risk
 
-🔹 Step 4: Fuse Datasets
-Use Bhuvan-derived fuel class where available
+3: High Risk
 
-Use ESA fallback where Bhuvan is missing
+4: Extreme Risk
 
-Save final fuel availability raster for ML
+255: No Data (ignored during training)
 
-d) Human Settlement data:
-We obtain this in two parts:
-1)from the Global Human Settlement Layer dataset (GHSL), we get Settlement density, urban extent, built-up areas
--From GHSL datasets, we opt for GHS-BUILT-S (built-up %), and GHS-SMOD(Add urban classification), for our use case
-2)OpenStreetMap (OSM) Roads & Human Features, we get Stressor layers — roads, tracks, urban areas, power lines, etc.
+🧮 Training Details Loss Function:
 
+Categorical Cross Entropy or Focal Loss
 
--Pythonic way to download, download to match each tile from our slope and aspect
+Loss ignores pixels labeled 255 (e.g., outside boundary/mask region)
 
+Optimizer:
 
-e)VIIRS(Historical fire data)
--again, download and pythonic method to extract
+Adam optimizer with default β1/β2 parameters
+
+Well-suited for complex spatial models with sparse gradients
+
+Learning Rate Scheduler:
+
+ReduceLROnPlateau or CosineAnnealingLR to adapt learning rate dynamically
+
+Helps converge faster while avoiding overfitting
+
+Device:
+
+Trained on CUDA-enabled GPUs (torch.device("cuda")) for acceleration
+
+Falls back to CPU if no GPU is available
+
+Gradient Accumulation:
+
+For systems with memory constraints, gradient accumulation is used to simulate larger batch sizes across multiple forward passes:
+
+🗺️ Output Generates a multiclass probability map over the given raster tile or region. The predicted segmentation is typically post-processed into GeoTIFF or PNG format and used for visualization and further decision-making.
+
+🌍 Applications 🔥 Real-time fire monitoring and early warning
+
+📍 Identification of fire-prone hotspots
+
+🚒 Disaster preparedness and resource deployment planning
+
+📡 Integration with dashboards and GIS tools
+
+🧪 TODOs & Enhancements Integrate temporal modeling (e.g., LSTM or ConvLSTM for fire spread)
+
+Streamlined data preprocessing CLI
+
+Interactive map viewer for output visualization

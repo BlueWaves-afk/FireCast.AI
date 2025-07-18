@@ -77,3 +77,45 @@ Framework	Use For	Libraries
 TensorFlow / PyTorch	U-Net, ConvLSTM	tf.keras, torch, segmentation_models
 QGIS / Rasterio	Data prep & visualization	rasterio, GDAL, matplotlib
 Python + NumPy	Cellular Automata logic	Custom simulation & animation
+
+
+# Datasets Used
+OUR DATA PIPELINE FOLLOWS:
+-Clipping to state boundary
+-reproject to common coordinate epsg32644
+-cleaning the data for missing values
+-and processing and labelling the data for ML use case
+
+OUR COMMON RASTER DATA WOULD INCLUDE: 1)SLOPE & ASPECT 2)GHS_built_s 3) temperature 4)wind velocity 5)LULC
+
+We consider weather bands as dynamic, changing day to day, and keep the other bands as relatively static(update every year), hence we need to create a folder structure for seperate weather data for seperate days, across the year. We match this with VIIRS data for the next day(forecast)
+We match weather and VIIRS data at 12 UTC
+
+a) Weather Data: Wind speed/direction, temperature, rainfall, humidity (from MOSDAC, ERA-5, IMD)
+
+We have 3 datasets to obtain our data from, out of this we have determined that ERA5(ECMWF Copernicus), is the most complete for ML modeling. For this purpose we use the cdsapi python client(Copernicus Climate Data Store (CDS)).
+
+b) Terrain Parameters: Slope and aspect (from 30m DEM available on Bhoonidhi portal)
+We obtained the data in 14 tiles, covering the region of Uttarakhand, The titles are in 30m resolution(standard).
+
+c) Thematic Data: Fuel Availability using LULC datasets
+
+Land Use/Land Cover (LULC)
+
+we have options such as Sentinel or Bhuvan or ESA worldwide, we opt to use a Hybrid approach, ESA WorldCover as your base raster (for uniform 10m resolution), and overlay/correct using Bhuvan LULC classes in critical fire zones (e.g., scrub, plantation, mixed forest).
+
+This Hybrid dataset would allow us to have ML ready inputs from ESA worldwide, as well as the comprehensive fuel detail from Bhuvan; also allowing for region specifc modeling.
+ 
+Our Hybrid approach follows a pipeline:
+
+
+Save final fuel availability raster for ML
+
+d) Human Settlement data:
+
+from the Global Human Settlement Layer dataset (GHSL), we get Settlement density, urban extent, built-up areas
+-From GHSL datasets, we opt for GHS-BUILT-S (built-up %)
+
+
+e)VIIRS(Historical fire data)
+-again, download and pythonic method to extract
