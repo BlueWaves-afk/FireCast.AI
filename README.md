@@ -1,7 +1,8 @@
 # FireCast.ai
 
 "Forecasting and simulating forest fire spread using AI/ML."
-<img width="512" height="512" alt="image_da56c2f0-f98f-4335-a148-cb901292b7c5" src="https://github.com/user-attachments/assets/cb8213e1-c723-4702-8e02-df38779aa6c7" />
+<img width="512" height="512" alt="image_76ac780e-cccb-448c-bf96-df064c6baac6" src="https://github.com/user-attachments/assets/fbfe3b9a-43be-424b-9d79-0c74fb2c6b3f" />
+
 
 Simulation/Modelling of Forest Fire Spread using AI/ML techniques
 Uncontrolled forest fires represent a significant challenge for government agencies tasked with preserving biodiversity and maintaining air quality. The spread of such fires is influenced by factors including weather conditions (temperature, precipitation, humidity, wind), terrain (slope, aspect, fuel availability), and human activity. With modern geospatial technologies, datasets from the Forest Survey of India and global services like VIIRS-SNP are accessible. Despite this, real-time simulation and forecasting remain complex. Short-term forecasting and dynamic simulation are crucial for timely preventive measures. AI/ML techniques offer promising capabilities to extract insights, helping planners estimate damage, prioritize containment, and mitigate fire impacts.
