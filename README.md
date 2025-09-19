@@ -1,4 +1,5 @@
-# FireCast.AI
+# FireCast.ai
+
 "Forecasting and simulating forest fire spread using AI/ML."
 
 Simulation/Modelling of Forest Fire Spread using AI/ML techniques
